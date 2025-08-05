@@ -1,0 +1,175 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Unit Converter',
+      theme: ThemeData(
+        primarySwatch: Colors.indigo,
+      ),
+      home: const UnitConverterScreen(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class Unit {
+  final String name;
+  final double factor;
+  Unit(this.name, this.factor);
+}
+
+class UnitConverterScreen extends StatefulWidget {
+  const UnitConverterScreen({super.key});
+
+  @override
+  State<UnitConverterScreen> createState() => _UnitConverterScreenState();
+}
+
+class _UnitConverterScreenState extends State<UnitConverterScreen> {
+  final List<Unit> units = [
+    Unit("Centimeter", 0.01),
+    Unit("Meter", 1.0),
+    Unit("Feet", 0.3048),
+    Unit("Inch", 0.0254),
+    Unit("Millimeter", 0.001),
+  ];
+
+  late Unit inputUnit;
+  late Unit outputUnit;
+
+  String inputValue = '';
+  String outputValue = '';
+
+  @override
+  void initState() {
+    super.initState();
+    inputUnit = units[1]; // Default: Meter
+    outputUnit = units[2]; // Default: Feet
+  }
+
+  void convertUnit() {
+    double? val = double.tryParse(inputValue);
+    if (val == null) {
+      setState(() {
+        outputValue = '';
+      });
+      return;
+    }
+    double meterValue = val * inputUnit.factor;
+    double result = meterValue / outputUnit.factor;
+    setState(() {
+      outputValue = result.toStringAsFixed(4); // 4 decimal places
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Unit Converter"),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: "Enter value",
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (val) {
+                inputValue = val;
+                convertUnit();
+              },
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                // Input unit dropdown
+                Expanded(
+                  child: DropdownButton<Unit>(
+                    value: inputUnit,
+                    onChanged: (Unit? newUnit) {
+                      if (newUnit != null) {
+                        setState(() {
+                          inputUnit = newUnit;
+                        });
+                        convertUnit();
+                      }
+                    },
+                    items: units
+                        .map((unit) => DropdownMenuItem<Unit>(
+                              value: unit,
+                              child: Text(unit.name),
+                            ))
+                        .toList(),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Icon(Icons.swap_horiz, size: 32, color: Colors.indigo),
+                const SizedBox(width: 16),
+                // Output unit dropdown
+                Expanded(
+                  child: DropdownButton<Unit>(
+                    value: outputUnit,
+                    onChanged: (Unit? newUnit) {
+                      if (newUnit != null) {
+                        setState(() {
+                          outputUnit = newUnit;
+                        });
+                        convertUnit();
+                      }
+                    },
+                    items: units
+                        .map((unit) => DropdownMenuItem<Unit>(
+                              value: unit,
+                              child: Text(unit.name),
+                            ))
+                        .toList(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              transitionBuilder: (child, animation) =>
+                  FadeTransition(opacity: animation, child: child),
+              child: outputValue.isEmpty
+                  ? Container(
+                      key: const ValueKey('empty'),
+                      height: 40,
+                    )
+                  : Container(
+                      key: ValueKey(outputValue),
+                      padding: const EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: Colors.indigo.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        "$outputValue ${outputUnit.name}",
+                        style: const TextStyle(
+                            fontSize: 24,
+                            color: Colors.indigo,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
